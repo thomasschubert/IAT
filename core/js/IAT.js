@@ -1,6 +1,6 @@
 template = {};
 sub = '';
-
+results_saved = false;
 
 function randomString(length) {
 	var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -12,7 +12,6 @@ function randomString(length) {
 // Loads the input file and starts introduction
 function initialize()
 {	
-
 	var tempsubID = randomString(10);
 
 	// get active template & load data into global variable
@@ -337,7 +336,7 @@ function instructionPage()
 		$("#left_cat").html("");
 		$("#right_cat").html("");
 		$("#exp_instruct").html("<img src='core/spinner.gif'>");
-		WriteFile();
+
 		if(template.showResult == "show")
 		{
 		    calculateIAT();
@@ -348,12 +347,8 @@ function instructionPage()
 		    $("#picture_frame").html(resulttext);
 			
 		}
-
-		//crude hack for forwarding by TS
-		if (template.running == "embedded") 
-		{
-			window.location.href = template.nextURL + sub;
-		}
+		
+		WriteFile();
 	}
 	else
 	{
@@ -593,8 +588,19 @@ function WriteFile()
 		}
 	}
 	
-    $.post("core/fileManager.php", { 'op':'writeoutput', 'template':template.name, 
- 			'subject': subject, 'data': str });	
+    $.post("core/fileManager.php", { 'op':'writeoutput', 'template':template.name, 'subject': subject, 'data': str }, WriteFile_success, "json");
+}
+
+function WriteFile_success(response)
+{
+	results_saved = true;
+	
+	//crude hack for forwarding by TS
+	if (template.running == "embedded") 
+	{
+		window.location.href = template.nextURL + sub;
+	}
+	
 	// notify user of success?
 }
 
