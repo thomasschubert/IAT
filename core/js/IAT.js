@@ -1,6 +1,6 @@
 template = {};
 sub = '';
-
+results_saved = false;
 
 function randomString(length) {
 	var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -9,12 +9,16 @@ function randomString(length) {
     return result;
 }
 
+function Is_embedded()
+{
+	return template.hasOwnProperty( "running" ) && template.running == "embedded";
+}
+
 // Loads the input file and starts introduction
 function initialize()
 {	
-
 	var tempsubID = randomString(10);
-
+	
 	// get active template & load data into global variable
 	$.getJSON("templates/active.txt", function(input) {
 		document.title = input.active + " IAT";
@@ -25,12 +29,12 @@ function initialize()
 			//takes subID from URL location.search property
 			//expects something like http://www.server.com/IAT/index.php?subID=12345
 			//if no query is present, or if subID is empty (e.g., ?subID= ), subID defaults to 999+random string
-			if (template.running == "embedded") 
+			if (Is_embedded()) 
 			{
 				tempsubID = getQueryVariable('subID');
-				if (tempsubID == "") {tempsubID="99999"+randomString(5)}
+				if (!tempsubID) {tempsubID="99999"+randomString(5)}
 			}
-
+			
 			//change here to make instruct0 more flexible
 			//to go with standard instruct0.html, just leave running=""
 			$.get("core/instruct0"+template.running+".html", function(data) {
@@ -57,7 +61,7 @@ function getQueryVariable(variable)
             return decodeURIComponent(pair[1]);
         }
     }
-    return(999999);
+    return null;
 }
 
 function loadInstructions(stage)
@@ -337,7 +341,7 @@ function instructionPage()
 		$("#left_cat").html("");
 		$("#right_cat").html("");
 		$("#exp_instruct").html("<img src='core/spinner.gif'>");
-		WriteFile();
+
 		if(template.showResult == "show")
 		{
 		    calculateIAT();
@@ -348,12 +352,8 @@ function instructionPage()
 		    $("#picture_frame").html(resulttext);
 			
 		}
-
-		//crude hack for forwarding by TS
-		if (template.running == "embedded") 
-		{
-			window.location.href = template.nextURL + sub;
-		}
+		
+		WriteFile();
 	}
 	else
 	{
@@ -593,8 +593,19 @@ function WriteFile()
 		}
 	}
 	
-    $.post("core/fileManager.php", { 'op':'writeoutput', 'template':template.name, 
- 			'subject': subject, 'data': str });	
+    $.post("core/fileManager.php", { 'op':'writeoutput', 'template':template.name, 'subject': subject, 'data': str }, WriteFile_success, "json");
+}
+
+function WriteFile_success(response)
+{
+	results_saved = true;
+	
+	//crude hack for forwarding by TS
+	if (Is_embedded()) 
+	{
+		window.location.href = template.nextURL + sub;
+	}
+	
 	// notify user of success?
 }
 
